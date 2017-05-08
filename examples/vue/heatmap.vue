@@ -41,8 +41,8 @@
     </div>
 </template>
 <script>
-import api from './api';
-import Adapter from './adapter';
+import api from '../api';
+import Adapter from '../../src';
 export default {
     name: 'heatmap',
     data: function () {

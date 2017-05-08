@@ -1,4 +1,4 @@
-import Heatmap from '../src';
+import Heatmap from '../heatmap/src';
 const defaultOption = {
     type: 'heatmap',
     hoverable: false,
