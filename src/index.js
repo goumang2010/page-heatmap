@@ -12,16 +12,7 @@ export default class Adapter {
         this.setTypes(types);
         this.setCurrentType();
     }
-    setTypes(types) {
-        this.types = types.map(x => ({ ...x, field: '_' + (x.name || 'noname') }));
-    }
-    setCurrentType(i = 0) {
-        let type = this.types[i];
-        this.type = type;
-        this.typeName = type.name;
-        this.field = type.field || (type.field = '_' + (type.name || 'noname'));
-    }
-    getLauncher({ option = {}, initData } = {}) {
+    init({ option = {}, initData } = {}) {
         option = { ...defaultOption, ...option };
         const heatmapInstance = new Heatmap(option);
         this.$win = document.querySelector('iframe').contentWindow;
@@ -56,7 +47,20 @@ export default class Adapter {
         });
         adapter.append(heatmapInstance.canvas);
         adapter.showTip();
-        return launcher;
+        this.launcher = launcher;
+    }
+    start(data) {
+        data && (data = adapter.preProcess(data))
+        this.launcher && this.launcher.start(data);
+    }
+    setTypes(types) {
+        this.types = types.map(x => ({ ...x, field: '_' + (x.name || 'noname') }));
+    }
+    setCurrentType(i = 0) {
+        let type = this.types[i];
+        this.type = type;
+        this.typeName = type.name;
+        this.field = type.field || (type.field = '_' + (type.name || 'noname'));
     }
     getIframeSize() {
         return {
@@ -74,9 +78,9 @@ export default class Adapter {
         this.$heatdiv.style.width = width + 'px';
         this.$heatdiv.style.height = height + 'px';
     }
-    resetType(i, launcher) {
-        this.setCurrentType(i);
-        launcher && launcher.clear();
+    resetType(i) {
+        launchersetCurrentType(i);
+        this.launcher && this.launcher.clear();
     }
     bindEvent({ id, type, handler, target = this.$doc }) {
         target.addEventListener(type, handler);

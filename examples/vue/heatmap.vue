@@ -62,7 +62,6 @@ export default {
                 p: 1
             }],
             typeIndex: 0,
-            $launcher: null,
             $adapter: null,
             config: {
                 platform: 'PC',
@@ -109,8 +108,8 @@ export default {
             this.iframe_loaded = true;
             let options = this.config;
             return api.getHeatData(options).then((data) => {
-                this.$launcher = this.$adapter.getLauncher({ initData: data })
-                this.$launcher.start();
+                this.$adapter.init({ initData: data });
+                this.$adapter.start();
             }).catch(err => {
                 throw err;
             });
@@ -119,7 +118,7 @@ export default {
     watch: {
         typeIndex: {
             handler(newValue, oldValue) {
-                this.$adapter && this.$adapter.resetType(this.typeIndex, this.$launcher);
+                this.$adapter && this.$adapter.resetType(this.typeIndex);
             }
         },
         show: {
