@@ -1,3 +1,12 @@
+const X_FIELD = '_centerX';
+const Y_FIELD = '_centerY';
+const W_FIELD = '_w';
+const H_FIELD = '_h';
+const VS_FIELD = 'visible';
+// slient field
+const SL_FIELD = 'visible';
+const PARSED_VAL_FIELD = '_value';
+const RAW_VAL_FIELD = 'value';
 export function createProcessor($win = window, cb) {
     const $doc = $win.document;
     const efp = $doc.elementFromPoint.bind($doc);
@@ -8,36 +17,36 @@ export function createProcessor($win = window, cb) {
         const winHeight = $win.innerHeight;
         let _data = data.map((x, i) => {
             let $el = x.$el || (x.$el = $doc.querySelector(x.selector));
-            delete x.visible;
-            delete x.slient;
+            delete x[VS_FIELD];
+            delete x[SL_FIELD];
             if (!$el) {
                 return x;
             }
             let rect = $el.getBoundingClientRect();
             let _width = rect.width;
             let _height = rect.height;
-            let _centerX = rect.left + _width / 2;
-            let _centerY = rect.top + _height / 2;
+            let _cx = rect.left + _width / 2;
+            let _cy = rect.top + _height / 2;
             // refer to http://stackoverflow.com/questions/123999/how-to-tell-if-a-dom-element-is-visible-in-the-current-viewport
             // if the point is scrolled out, then keep it.
-            let visible = _width && _height && $el.contains(efp(_centerX, _centerY));
-            let slient = _centerY < 0 || _centerY > winHeight && !visible;
+            let visible = _width && _height && $el.contains(efp(_cx, _cy));
+            let slient = _cy < 0 || _cy > winHeight && !visible;
             if (slient) {
                 return {
                     ...x,
-                    slient
+                    [SL_FIELD]: slient
                 }
             }
             if (visible) {
-                _centerX = Math.round(bodyScrollLeft + _centerX);
-                _centerY = Math.round(bodyScrollTop + _centerY);
+                _cx = Math.round(bodyScrollLeft + _cx);
+                _cy = Math.round(bodyScrollTop + _cy);
                 return {
                     ...x,
-                    _width,
-                    _height,
-                    _centerX,
-                    _centerY,
-                    visible
+                    [X_FIELD]: _cx,
+                    [Y_FIELD]: _cy,
+                    [W_FIELD]: _width,
+                    [H_FIELD]: _height,
+                    [VS_FIELD]: visible
                 };
             }
             return x;
@@ -46,9 +55,9 @@ export function createProcessor($win = window, cb) {
         return _data;
     }
 }
-export function createConverter(field, cb) {
+export function createConverter(cb) {
     return function(data = []) {
-        let _data = data.map(x => [x._centerX, x._centerY, x[field], x.visible, x.slient]);
+        let _data = data.map(x => [x[X_FIELD], x[Y_FIELD], x[PARSED_VAL_FIELD], x[VS_FIELD], x[SL_FIELD]]);
         cb && cb(_data);
         return _data;
     }
