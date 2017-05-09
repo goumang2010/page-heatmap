@@ -1,12 +1,5 @@
-const X_FIELD = '_centerX';
-const Y_FIELD = '_centerY';
-const W_FIELD = '_w';
-const H_FIELD = '_h';
-const VS_FIELD = 'visible';
-// slient field
-const SL_FIELD = 'visible';
-const PARSED_VAL_FIELD = '_value';
-const RAW_VAL_FIELD = 'value';
+import { field } from './constants';
+
 export function createProcessor($win = window, cb) {
     const $doc = $win.document;
     const efp = $doc.elementFromPoint.bind($doc);
@@ -17,8 +10,8 @@ export function createProcessor($win = window, cb) {
         const winHeight = $win.innerHeight;
         let _data = data.map((x, i) => {
             let $el = x.$el || (x.$el = $doc.querySelector(x.selector));
-            delete x[VS_FIELD];
-            delete x[SL_FIELD];
+            delete x[field.VS];
+            delete x[field.SL];
             if (!$el) {
                 return x;
             }
@@ -34,7 +27,7 @@ export function createProcessor($win = window, cb) {
             if (slient) {
                 return {
                     ...x,
-                    [SL_FIELD]: slient
+                    [field.SL]: slient
                 }
             }
             if (visible) {
@@ -42,11 +35,11 @@ export function createProcessor($win = window, cb) {
                 _cy = Math.round(bodyScrollTop + _cy);
                 return {
                     ...x,
-                    [X_FIELD]: _cx,
-                    [Y_FIELD]: _cy,
-                    [W_FIELD]: _width,
-                    [H_FIELD]: _height,
-                    [VS_FIELD]: visible
+                    [field.X]: _cx,
+                    [field.Y]: _cy,
+                    [field.W]: _width,
+                    [field.H]: _height,
+                    [field.VS]: visible
                 };
             }
             return x;
@@ -57,22 +50,24 @@ export function createProcessor($win = window, cb) {
 }
 export function createConverter(cb) {
     return function(data = []) {
-        let _data = data.map(x => [x[X_FIELD], x[Y_FIELD], x[PARSED_VAL_FIELD], x[VS_FIELD], x[SL_FIELD]]);
+        let _data = data.map(x => [x[field.X], x[field.Y], x[field.PARSED_VAL], x[field.VS], x[field.SL]]);
         cb && cb(_data);
         return _data;
     }
 }
+const maxVal = 1;
 export function trimData(data) {
     if (!Array.isArray(data)) {
         throw new Error('Please set data param for helper: trimData!')
     }
-    let vals = data.map(x => x[RAW_VALUE_FIELD]);
+    let vals = data.map(x => x[field.RAW_VAL]);
     vals.sort((a, b) => a - b);
     let half = Math.floor(vals.length / 2);
     let median = (vals.length % 2) ? vals[half] : (vals[half - 1] + vals[half]) / 2;
     let ratio = maxVal / 2 / median;
     return data.map((x) => ({
         ...x,
-        [PARSED_VAL_FIELD]: x[RAW_VAL_FIELD] * ratio
+        [field.PARSED_VAL]: x[field.RAW_VAL] * ratio
     }));
 }
+
