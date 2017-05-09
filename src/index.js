@@ -1,5 +1,5 @@
 import Heatmap from '../heatmap/src';
-import {createProcessor} from './utils';
+import {createProcessor, createConverter} from './utils';
 const defaultOption = {
     type: 'heatmap',
     hoverable: false,
@@ -42,8 +42,10 @@ export default class Adapter {
         })
         heatmapInstance.init(size);
         const launcher = heatmapInstance.buildAnimation({
-            processor: createProcessor(adapter.$win),
-            converter: adapter.convert.bind(adapter),
+            processor: createProcessor(adapter.$win, (data) => {
+                this.parsedData = data;
+            }),
+            converter: createConverter(adapter.field),
             data: adapter.preprocess(initData)
         });
         adapter.append(heatmapInstance.canvas);
@@ -56,6 +58,9 @@ export default class Adapter {
     }
     resetType(i) {
         this._setCurrentType(i);
+        if(this.launcher) {
+            this.launcher.reset({converter: createConverter(this.field)});
+        }
         this.launcher && this.launcher.clear();
     }
     setTypes(types) {
@@ -111,10 +116,6 @@ export default class Adapter {
         let { type, handler, target } = this.events[i];
         target.removeEventListener(type, handler);
         this.events.splice(i, 1);
-    }
-    convert(data) {
-        this.parsedData = data;
-        return data.map(x => [x._centerX, x._centerY, x[this.field], x.visible, x.slient]);
     }
     preprocess(data, maxVal = 1) {
         if (Array.isArray(data)) {
