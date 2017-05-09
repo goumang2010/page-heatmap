@@ -43,14 +43,14 @@ export default class Adapter {
         const launcher = heatmapInstance.buildAnimation({
             processor: adapter.process.bind(adapter),
             converter: adapter.convert.bind(adapter),
-            data: adapter.preProcess(initData)
+            data: adapter.preprocess(initData)
         });
         adapter.append(heatmapInstance.canvas);
         adapter.showTip();
         this.launcher = launcher;
     }
     start(data) {
-        data && (data = adapter.preProcess(data))
+        data && (data = adapter.preprocess(data))
         this.launcher && this.launcher.start(data);
     }
     setTypes(types) {
@@ -178,7 +178,7 @@ export default class Adapter {
         this.parsedData = data;
         return data.map(x => [x._centerX, x._centerY, x[this.field], x.visible, x.slient]);
     }
-    preProcess(data, maxVal = 1) {
+    preprocess(data, maxVal = 1) {
         if (Array.isArray(data)) {
             this.rawData = data;
         } else if (!this.rawData) {
