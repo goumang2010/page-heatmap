@@ -1,5 +1,7 @@
 import Heatmap from '../heatmap/src';
-import { createProcessor, createConverter } from './utils';
+import { field } from './constants';
+
+import { createProcessor, createConverter, trimData } from './utils';
 const defaultOption = {
     type: 'heatmap',
     hoverable: false,
@@ -12,11 +14,8 @@ export default class Adapter {
     constructor(config) {
         config && (this.init(config));
     }
-    init({ types, option = {}, initData, $win } = {}) {
-        if (types) {
-            this.setTypes(types);
-            this._setCurrentType();
-        }
+    static field = field;
+    init({ option = {}, initData, $win, dataFilter } = {}) {
         if ($win) {
             this.$win = $win;
             this.$doc = this.$win.document;
@@ -24,14 +23,14 @@ export default class Adapter {
             this._setLauncher({ ...defaultOption, ...option }, initData);
         }
     }
-    _setLauncher(option, initData) {
+    _setLauncher(option, initData, dataFilter) {
         let size = this._getBodySize();
         const heatmapInstance = new Heatmap(option);
         this.bindEvent({
             id: 'scroll',
             type: 'scroll',
-            handler: function() {
-                if (this.body.scrollTop > size.height - this.defaultView.innerHeight) {
+            handler: () => {
+                if (this.$body.scrollTop > size.height - this.$win.innerHeight) {
                     heatmapInstance.resetSize((size = this._getBodySize()));
                     this._resetSize(size);
                 }
@@ -41,7 +40,7 @@ export default class Adapter {
             id: 'resize',
             type: 'resize',
             target: this.$win,
-            handler: function() {
+            handler: () => {
                 heatmapInstance.resetSize((size = this._getBodySize()));
                 this._resetSize(size);
             }
@@ -51,26 +50,20 @@ export default class Adapter {
             processor: createProcessor(this.$win, (data) => {
                 this.parsedData = data;
             }),
-            converter: createConverter(this.field),
-            data: this.preprocess(initData)
+            converter: createConverter(dataFilter),
+            data: trimData(initData)
         });
         this.append(heatmapInstance.canvas);
-        this.showTip();
         this.launcher = launcher;
     }
     start(data) {
-        data && (data = this.preprocess(data))
+        data && (data = trimData(data))
         this.launcher && this.launcher.start(data);
     }
-    resetType(i) {
-        this._setCurrentType(i);
+    reset(data) {
         if (this.launcher) {
-            this.launcher.reset({ converter: createConverter(this.field) });
+            this.launcher.reset({ data: trimData(data) });
         }
-        this.launcher && this.launcher.clear();
-    }
-    setTypes(types) {
-        this.types = types.map(x => ({ ...x, field: '_' + (x.name || 'noname') }));
     }
     show() {
         this.$heatdiv && (this.$heatdiv.style.display = 'block');
@@ -123,26 +116,6 @@ export default class Adapter {
         target.removeEventListener(type, handler);
         this.events.splice(i, 1);
     }
-    preprocess(data, maxVal = 1) {
-        if (Array.isArray(data)) {
-            this.rawData = data;
-        } else if (!this.rawData) {
-            throw new Error('Please set rawData in advance or set data param')
-        }
-        for (let type of this.types) {
-            let name = type.name;
-            let vals = data.map(x => x[name]);
-            vals.sort((a, b) => a - b);
-            let half = Math.floor(vals.length / 2);
-            let median = (vals.length % 2) ? vals[half] : (vals[half - 1] + vals[half]) / 2;
-            type.p = maxVal / 2 / median;
-            let field = type.field;
-            data.forEach((x, i) => {
-                x[field] = x[name] * type.p;
-            })
-        }
-        return data;
-    }
     append(el) {
         if (!this.$heatdiv) {
             const $heatdiv = document.createElement("div");
@@ -161,78 +134,38 @@ export default class Adapter {
             this.$heatdiv = null;
         }
     }
-    showTip() {
-        if (!this.$doc || !this.$heatdiv) {
-            throw new Error('Document element and heatdiv must be assigned in advance, run generateCanvas first!');
-        }
-        // bind event
-        this.unbindEvent('tip', true);
-        let $tip, $popover;
-        // inject popover
-        if (!($popover = this.$popover)) {
-            $tip = document.createElement('p');
-            $tip.style.textAlign = 'left';
-            $popover = document.createElement('div');
-            $popover.style.cssText = `z-index:999999;overflow:hidden;display:none;position:absolute;border:0px solid rgb(51,51,51);transition:left 0.4s,top 0.4s;border-radius:4px;color:rgb(255,255,255);padding:5px;background-color:rgba(0,0,0,0.7);transition: all 0.5s`;
-            $popover.appendChild($tip);
-            this.$popover = $popover;
-            this.$heatdiv.appendChild($popover);
-        } else {
-            $tip = $popover.querySelector('p');
-        }
-        const getTipText = (data) => this.types.map(x => `${x.text}: ${data[x.name]}`).join('<br>');
-        const tipData = this.rawData.map(x => `Name：${x.pointName || '--'}<br>${getTipText(x)}`);
-        let wait = false,
-            _element, _text;
-        const setPopover = (x, y) => {
-            let docwidth = this.$body.offsetWidth;
-            let halfwidth = docwidth / 2;
-            if (x < halfwidth) {
-                $popover.style.right = '';
-                $popover.style.left = x + 12 + 'px';
-            } else {
-                $popover.style.right = docwidth - x + 12 + 'px';
-                $popover.style.left = '';
-            }
-            $popover.style.top = y + 12 + 'px';
-            $popover.style.display = 'block';
-            wait = false;
-        }
-        const tipEvent = (e) => {
+    hover(enter, over, off, throttle = 200) {
+        let state, wait = false;
+        const onHover = (e) => {
             if (!this.parsedData) {
                 return;
             }
             let _x = e.pageX;
             let _y = e.pageY;
-            let i = this.parsedData.findIndex(p => Math.abs(p._centerX - _x) <= (p._width / 2) && Math.abs(p._centerY - _y) <= (p._height / 2));
+            let i = this.parsedData.findIndex(p => Math.abs(p[field.X] - _x) <= (p[field.W] / 2) && Math.abs(p[field.Y] - _y) <= (p[field.H] / 2));
             if (i > -1) {
-                let item = tipData[i];
-                if (_element !== item) {
-                    $tip.innerHTML = item;
-                    setPopover(_x, _y);
-                    _element = item;
+                if (state !== i) {
+                    enter(_x, _y, i, this.parsedData);
+                    state = i;
+                    wait = false;
                 } else {
                     if (!wait) {
                         // throttle
                         setTimeout(() => {
-                            _element && setPopover(_x, _y);
-                        }, 200);
+                            over(_x, _y);
+                            wait = false;
+                        }, throttle);
                         wait = true;
                     }
                 }
             } else {
+                off();
                 wait = false;
-                _element = null;
-                $popover.style.display = 'none';
+                state = -1;
+                
             }
         }
-        this.bindEvent({ id: 'tip', type: 'mousemove', handler: tipEvent.bind(this) })
-    }
-    _setCurrentType(i = 0) {
-        let type = this.types[i];
-        this.type = type;
-        this.typeName = type.name;
-        this.field = type.field || (type.field = '_' + (type.name || 'noname'));
+        this.bindEvent({ id: 'hover', type: 'mousemove', handler: onHover.bind(this) })
     }
     _getBodySize() {
         return {

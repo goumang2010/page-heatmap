@@ -63,14 +63,20 @@ export default {
             }],
             typeIndex: 0,
             $adapter: null,
+            $heatdata: null,
             config: {
                 platform: 'PC',
                 url: 'https://www.gomeplus.com/'
             }
         }
     },
+    computed: {
+        type() {
+            return this.types[this.typeIndex].name;
+        }
+    },
     mounted() {
-        this.$adapter = new Adapter({types: this.types});
+        this.$adapter = new Adapter({ types: this.types });
     },
     methods: {
         searchClick() {
@@ -108,17 +114,51 @@ export default {
             this.iframe_loaded = true;
             let options = this.config;
             return api.getHeatData(options).then((data) => {
-                this.$adapter.init({ initData: data, $win: document.querySelector('iframe').contentWindow });
+                this.$heatdata = data;
+                this.$adapter.init({ initData: data.map(x => ({ value: x[this.type], selector: x.selector })), $win: document.querySelector('iframe').contentWindow });
                 this.$adapter.start();
+                this.showTip()
             }).catch(err => {
                 throw err;
             });
+        },
+        showTip() {
+            let $tip, $popover;
+            let $adapter = this.$adapter;
+            // inject popover
+            $tip = document.createElement('p');
+            $tip.style.textAlign = 'left';
+            $popover = document.createElement('div');
+            $popover.style.cssText = `z-index:999999;overflow:hidden;display:none;position:absolute;border:0px solid rgb(51,51,51);transition:left 0.4s,top 0.4s;border-radius:4px;color:rgb(255,255,255);padding:5px;background-color:rgba(0,0,0,0.7);transition: all 0.5s`;
+            $popover.appendChild($tip);
+            $adapter.append($popover);
+            const getTipText = (data) => this.types.map(x => `${x.text}: ${data[x.name]}`).join('<br>');
+            const tipData = this.$heatdata.map(x => `Name：${x.pointName || '--'}<br>${getTipText(x)}`);
+            const setPopover = (x, y) => {
+                let docwidth = $adapter.$body.offsetWidth;
+                let halfwidth = docwidth / 2;
+                if (x < halfwidth) {
+                    $popover.style.right = '';
+                    $popover.style.left = x + 12 + 'px';
+                } else {
+                    $popover.style.right = docwidth - x + 12 + 'px';
+                    $popover.style.left = '';
+                }
+                $popover.style.top = y + 12 + 'px';
+                $popover.style.display = 'block';
+            }
+            $adapter.hover((x, y, i) => {
+                $tip.innerHTML = tipData[i];
+                setPopover(x, y);
+            }, setPopover, () => {
+                $popover.style.display = 'none';
+            })
         }
     },
     watch: {
-        typeIndex: {
+        type: {
             handler(newValue, oldValue) {
-                this.$adapter && this.$adapter.resetType(this.typeIndex);
+                this.$adapter && this.$adapter.reset(this.$heatdata.map(x => ({ value: x[this.type], selector: x.selector })));
             }
         },
         show: {
