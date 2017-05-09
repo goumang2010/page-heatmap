@@ -1,5 +1,5 @@
 import Heatmap from '../heatmap/src';
-import {createProcessor, createConverter} from './utils';
+import { createProcessor, createConverter } from './utils';
 const defaultOption = {
     type: 'heatmap',
     hoverable: false,
@@ -9,57 +9,63 @@ const defaultOption = {
     bgAlpha: 100,
 };
 export default class Adapter {
-    constructor(types) {
-        this.setTypes(types);
-        this._setCurrentType();
+    constructor(config) {
+        config && (this.init(config));
     }
-    init({ option = {}, initData, $win = window } = {}) {
-        option = { ...defaultOption, ...option };
+    init({ types, option = {}, initData, $win } = {}) {
+        if (types) {
+            this.setTypes(types);
+            this._setCurrentType();
+        }
+        if ($win) {
+            this.$win = $win;
+            this.$doc = this.$win.document;
+            this.$body = this.$doc.body;
+            this._setLauncher({ ...defaultOption, ...option }, initData);
+        }
+    }
+    _setLauncher(option, initData) {
+        let size = this._getBodySize();
         const heatmapInstance = new Heatmap(option);
-        this.$win = $win;
-        this.$doc = this.$win.document;
-        this.$body = this.$doc.body;
-        let adapter = this;
-        let size = adapter._getBodySize();
-        adapter.bindEvent({
+        this.bindEvent({
             id: 'scroll',
             type: 'scroll',
             handler: function() {
                 if (this.body.scrollTop > size.height - this.defaultView.innerHeight) {
-                    heatmapInstance.resetSize((size = adapter._getBodySize()));
-                    adapter._resetSize(size);
+                    heatmapInstance.resetSize((size = this._getBodySize()));
+                    this._resetSize(size);
                 }
             }
         })
-        adapter.bindEvent({
+        this.bindEvent({
             id: 'resize',
             type: 'resize',
-            target: adapter.$win,
+            target: this.$win,
             handler: function() {
-                heatmapInstance.resetSize((size = adapter._getBodySize()));
-                adapter._resetSize(size);
+                heatmapInstance.resetSize((size = this._getBodySize()));
+                this._resetSize(size);
             }
         })
         heatmapInstance.init(size);
         const launcher = heatmapInstance.buildAnimation({
-            processor: createProcessor(adapter.$win, (data) => {
+            processor: createProcessor(this.$win, (data) => {
                 this.parsedData = data;
             }),
-            converter: createConverter(adapter.field),
-            data: adapter.preprocess(initData)
+            converter: createConverter(this.field),
+            data: this.preprocess(initData)
         });
-        adapter.append(heatmapInstance.canvas);
-        adapter.showTip();
+        this.append(heatmapInstance.canvas);
+        this.showTip();
         this.launcher = launcher;
     }
     start(data) {
-        data && (data = adapter.preprocess(data))
+        data && (data = this.preprocess(data))
         this.launcher && this.launcher.start(data);
     }
     resetType(i) {
         this._setCurrentType(i);
-        if(this.launcher) {
-            this.launcher.reset({converter: createConverter(this.field)});
+        if (this.launcher) {
+            this.launcher.reset({ converter: createConverter(this.field) });
         }
         this.launcher && this.launcher.clear();
     }

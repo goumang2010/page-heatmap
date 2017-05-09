@@ -70,7 +70,7 @@ export default {
         }
     },
     mounted() {
-        this.$adapter = new Adapter([...this.types]);
+        this.$adapter = new Adapter({types: this.types});
     },
     methods: {
         searchClick() {
