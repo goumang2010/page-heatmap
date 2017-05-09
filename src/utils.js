@@ -62,3 +62,17 @@ export function createConverter(cb) {
         return _data;
     }
 }
+export function trimData(data) {
+    if (!Array.isArray(data)) {
+        throw new Error('Please set data param for helper: trimData!')
+    }
+    let vals = data.map(x => x[RAW_VALUE_FIELD]);
+    vals.sort((a, b) => a - b);
+    let half = Math.floor(vals.length / 2);
+    let median = (vals.length % 2) ? vals[half] : (vals[half - 1] + vals[half]) / 2;
+    let ratio = maxVal / 2 / median;
+    return data.map((x) => ({
+        ...x,
+        [PARSED_VAL_FIELD]: x[RAW_VAL_FIELD] * ratio
+    }));
+}
