@@ -108,7 +108,7 @@ export default {
             this.iframe_loaded = true;
             let options = this.config;
             return api.getHeatData(options).then((data) => {
-                this.$adapter.init({ initData: data });
+                this.$adapter.init({ initData: data, $win: document.querySelector('iframe').contentWindow });
                 this.$adapter.start();
             }).catch(err => {
                 throw err;

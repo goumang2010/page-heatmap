@@ -12,20 +12,20 @@ export default class Adapter {
         this.setTypes(types);
         this.setCurrentType();
     }
-    init({ option = {}, initData } = {}) {
+    init({ option = {}, initData, $win = window } = {}) {
         option = { ...defaultOption, ...option };
         const heatmapInstance = new Heatmap(option);
-        this.$win = document.querySelector('iframe').contentWindow;
+        this.$win = $win;
         this.$doc = this.$win.document;
         this.$body = this.$doc.body;
         let adapter = this;
-        let size = adapter.getIframeSize();
+        let size = adapter.getBodySize();
         adapter.bindEvent({
             id: 'scroll',
             type: 'scroll',
             handler: function() {
                 if (this.body.scrollTop > size.height - this.defaultView.innerHeight) {
-                    heatmapInstance.resetSize((size = adapter.getIframeSize()));
+                    heatmapInstance.resetSize((size = adapter.getBodySize()));
                     adapter.resetSize(size);
                 }
             }
@@ -35,7 +35,7 @@ export default class Adapter {
             type: 'resize',
             target: adapter.$win,
             handler: function() {
-                heatmapInstance.resetSize((size = adapter.getIframeSize()));
+                heatmapInstance.resetSize((size = adapter.getBodySize()));
                 adapter.resetSize(size);
             }
         })
@@ -62,7 +62,7 @@ export default class Adapter {
         this.typeName = type.name;
         this.field = type.field || (type.field = '_' + (type.name || 'noname'));
     }
-    getIframeSize() {
+    getBodySize() {
         return {
             width: this.$body.offsetWidth,
             height: this.$body.offsetHeight
@@ -218,7 +218,7 @@ export default class Adapter {
     }
     showTip() {
         if (!this.$doc || !this.$heatdiv) {
-            throw new Error('Iframe element and heatdiv must be assigned in advance, run generateCanvas first!');
+            throw new Error('Document element and heatdiv must be assigned in advance, run generateCanvas first!');
         }
         // bind event
         this.unbindEvent('tip', true);
