@@ -76,7 +76,7 @@
                 "pageUrl": "https://www.gomeplus.com/",
                 "selector": "div#gomeplus-header-top > div > ul > li:first-child+li+li > a",
                 "pv": 14,
-                "uv": 10,
+                "uv": 0,
                 "pointId": 0,
                 "pointName": "2.0Plus-a3",
                 "dateTime": "2017-04-25 00:00:00-2017-05-02 23:59:59",

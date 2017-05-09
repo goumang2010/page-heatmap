@@ -10,7 +10,7 @@ const defaultOption = {
 export default class Adapter {
     constructor(types) {
         this.setTypes(types);
-        this.setCurrentType();
+        this._setCurrentType();
     }
     init({ option = {}, initData, $win = window } = {}) {
         option = { ...defaultOption, ...option };
@@ -19,14 +19,14 @@ export default class Adapter {
         this.$doc = this.$win.document;
         this.$body = this.$doc.body;
         let adapter = this;
-        let size = adapter.getBodySize();
+        let size = adapter._getBodySize();
         adapter.bindEvent({
             id: 'scroll',
             type: 'scroll',
             handler: function() {
                 if (this.body.scrollTop > size.height - this.defaultView.innerHeight) {
-                    heatmapInstance.resetSize((size = adapter.getBodySize()));
-                    adapter.resetSize(size);
+                    heatmapInstance._resetSize((size = adapter._getBodySize()));
+                    adapter._resetSize(size);
                 }
             }
         })
@@ -35,8 +35,8 @@ export default class Adapter {
             type: 'resize',
             target: adapter.$win,
             handler: function() {
-                heatmapInstance.resetSize((size = adapter.getBodySize()));
-                adapter.resetSize(size);
+                heatmapInstance._resetSize((size = adapter._getBodySize()));
+                adapter._resetSize(size);
             }
         })
         heatmapInstance.init(size);
@@ -53,34 +53,18 @@ export default class Adapter {
         data && (data = adapter.preprocess(data))
         this.launcher && this.launcher.start(data);
     }
+    resetType(i) {
+        this._setCurrentType(i);
+        this.launcher && this.launcher.clear();
+    }
     setTypes(types) {
         this.types = types.map(x => ({ ...x, field: '_' + (x.name || 'noname') }));
-    }
-    setCurrentType(i = 0) {
-        let type = this.types[i];
-        this.type = type;
-        this.typeName = type.name;
-        this.field = type.field || (type.field = '_' + (type.name || 'noname'));
-    }
-    getBodySize() {
-        return {
-            width: this.$body.offsetWidth,
-            height: this.$body.offsetHeight
-        }
     }
     show() {
         this.$heatdiv && (this.$heatdiv.style.display = 'block');
     }
     hide() {
         this.$heatdiv && (this.$heatdiv.style.display = 'none');
-    }
-    resetSize({ width, height }) {
-        this.$heatdiv.style.width = width + 'px';
-        this.$heatdiv.style.height = height + 'px';
-    }
-    resetType(i) {
-        launchersetCurrentType(i);
-        this.launcher && this.launcher.clear();
     }
     bindEvent({ id, type, handler, target = this.$doc }) {
         target.addEventListener(type, handler);
@@ -126,9 +110,6 @@ export default class Adapter {
         let { type, handler, target } = this.events[i];
         target.removeEventListener(type, handler);
         this.events.splice(i, 1);
-    }
-    updateData(data) {
-        this.rawData = data;
     }
     process(data = []) {
         const $doc = this.$doc;
@@ -282,5 +263,21 @@ export default class Adapter {
             }
         }
         this.bindEvent({ id: 'tip', type: 'mousemove', handler: tipEvent.bind(this) })
+    }
+    _setCurrentType(i = 0) {
+        let type = this.types[i];
+        this.type = type;
+        this.typeName = type.name;
+        this.field = type.field || (type.field = '_' + (type.name || 'noname'));
+    }
+    _getBodySize() {
+        return {
+            width: this.$body.offsetWidth,
+            height: this.$body.offsetHeight
+        }
+    }
+    _resetSize({ width, height }) {
+        this.$heatdiv.style.width = width + 'px';
+        this.$heatdiv.style.height = height + 'px';
     }
 }
