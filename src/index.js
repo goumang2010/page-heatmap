@@ -1,6 +1,5 @@
 import Heatmap from '../heatmap/src';
 import { field } from './constants';
-
 import { createProcessor, createConverter, trimData } from './utils';
 const defaultOption = {
     type: 'heatmap',
@@ -15,15 +14,15 @@ export default class Adapter {
         config && (this.init(config));
     }
     static field = field;
-    init({ option = {}, initData, $win, dataFilter } = {}) {
+    init({ option = {}, $win, initData, dataLengthFixed = false } = {}) {
         if ($win) {
             this.$win = $win;
             this.$doc = this.$win.document;
             this.$body = this.$doc.body;
-            this._setLauncher({ ...defaultOption, ...option }, initData);
+            this._setLauncher({ ...defaultOption, ...option }, initData, dataLengthFixed);
         }
     }
-    _setLauncher(option, initData, dataFilter) {
+    _setLauncher(option, initData, indexKey) {
         let size = this._getBodySize();
         const heatmapInstance = new Heatmap(option);
         this.bindEvent({
@@ -50,7 +49,7 @@ export default class Adapter {
             processor: createProcessor(this.$win, (data) => {
                 this.parsedData = data;
             }),
-            converter: createConverter(dataFilter),
+            converter: createConverter(indexKey),
             data: trimData(initData)
         });
         this.append(heatmapInstance.canvas);
@@ -162,7 +161,6 @@ export default class Adapter {
                 off();
                 wait = false;
                 state = -1;
-                
             }
         }
         this.bindEvent({ id: 'hover', type: 'mousemove', handler: onHover.bind(this) })

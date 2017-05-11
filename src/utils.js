@@ -1,5 +1,4 @@
 import { field } from './constants';
-
 export function createProcessor($win = window, cb) {
     const $doc = $win.document;
     const efp = $doc.elementFromPoint.bind($doc);
@@ -48,11 +47,17 @@ export function createProcessor($win = window, cb) {
         return _data;
     }
 }
-export function createConverter(cb) {
-    return function(data = []) {
-        let _data = data.map(x => [x[field.X], x[field.Y], x[field.PARSED_VAL], x[field.VS], x[field.SL]]);
-        cb && cb(_data);
-        return _data;
+export function createConverter(indexKey = false) {
+    if (indexKey) {
+        return function(data = []) {
+            let _data = data.map((x, i) => [x[field.X], x[field.Y], x[field.PARSED_VAL], x[field.VS], x[field.SL], i]);
+            return _data;
+        }
+    } else {
+        return function(data = []) {
+            let _data = data.map((x, i) => [x[field.X], x[field.Y], x[field.PARSED_VAL], x[field.VS], x[field.SL]]);
+            return _data;
+        }
     }
 }
 const maxVal = 1;
@@ -70,4 +75,3 @@ export function trimData(data) {
         [field.PARSED_VAL]: x[field.RAW_VAL] * ratio
     }));
 }
-
