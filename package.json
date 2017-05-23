@@ -1,7 +1,7 @@
 {
     "name": "page-heatmap",
     "description": "page heatmap",
-    "version": "1.1.0",
+    "version": "1.0.0",
     "license": "MIT",
     "author": {
         "name": "lzn",
@@ -42,7 +42,7 @@
     },
     "main": "./dist/index.js",
     "files": [
-        "dist", "src"
+        "dist"
     ],
     "repository": {
         "type": "git",
@@ -50,6 +50,7 @@
     },
     "scripts": {
         "preinstall": "git submodule init&&git submodule update --remote",
+        "build": "webpack --config build/webpack.config.js",
         "eg:vue": "node examples/start.js vue"
     }
 }
