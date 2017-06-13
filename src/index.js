@@ -22,7 +22,7 @@ export default class Adapter {
             this._setLauncher({ ...defaultOption, ...option }, initData, dataLengthFixed);
         }
     }
-    _setLauncher(option, initData, indexKey) {
+    _setLauncher(option, initData, hasIndexKey) {
         let size = this._getBodySize();
         const heatmapInstance = new Heatmap(option);
         this.bindEvent({
@@ -45,10 +45,12 @@ export default class Adapter {
             }
         })
         heatmapInstance.init(size);
+        const preProcessor = createPreProcessor(this.$win, (data) => {
+            this.parsedData = data;
+        });
+        const converter = createConverter(hasIndexKey);
         const launcher = heatmapInstance.buildAnimation({
-            converter: (data) => createConverter(indexKey)(createPreProcessor(this.$win, (data) => {
-                this.parsedData = data;
-            })(data)),
+            converter: (data) => converter(preProcessor(data)),
             data: trimData(initData)
         });
         this.append(heatmapInstance.canvas);
