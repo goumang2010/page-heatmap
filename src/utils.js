@@ -1,5 +1,5 @@
 import { field } from './constants';
-export function createProcessor($win = window, cb) {
+export function createPreProcessor($win = window, cb) {
     const $doc = $win.document;
     const efp = $doc.elementFromPoint.bind($doc);
     return function(data = []) {

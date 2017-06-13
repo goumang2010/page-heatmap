@@ -1,6 +1,6 @@
 import Heatmap from '../heatmap/src';
 import { field } from './constants';
-import { createProcessor, createConverter, trimData } from './utils';
+import { createPreProcessor, createConverter, trimData } from './utils';
 const defaultOption = {
     type: 'heatmap',
     hoverable: false,
@@ -46,10 +46,9 @@ export default class Adapter {
         })
         heatmapInstance.init(size);
         const launcher = heatmapInstance.buildAnimation({
-            processor: createProcessor(this.$win, (data) => {
+            converter: (data) => createConverter(indexKey)(createPreProcessor(this.$win, (data) => {
                 this.parsedData = data;
-            }),
-            converter: createConverter(indexKey),
+            })(data)),
             data: trimData(initData)
         });
         this.append(heatmapInstance.canvas);
