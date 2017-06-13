@@ -1,8 +1,8 @@
 export const field =  {
-    X: '_centerX',
-    Y: '_centerY',
-    W: '_w',
-    H: '_h',
+    X: 'cx',
+    Y: 'cy',
+    W: 'w',
+    H: 'h',
     VS: 'visible',
     // slient field
     SL: 'slient',
