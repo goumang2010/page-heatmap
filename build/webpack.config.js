@@ -6,6 +6,7 @@ var config = {
     },
     output: {
         path: path.resolve(__dirname, '../dist'),
+        libraryTarget: 'umd',
         filename: 'index.js'
     },
     module: {
