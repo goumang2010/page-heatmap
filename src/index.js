@@ -14,15 +14,15 @@ export default class Adapter {
         config && (this.init(config));
     }
     static field = field;
-    init({ option = {}, $win, initData, dataLengthFixed = false } = {}) {
+    init({ option = {}, $win, initData, customProcessor, dataLengthFixed = false } = {}) {
         if ($win) {
             this.$win = $win;
             this.$doc = this.$win.document;
             this.$body = this.$doc.body;
-            this._setLauncher({ ...defaultOption, ...option }, initData, dataLengthFixed);
+            this._setLauncher({ option: { ...defaultOption, ...option }, initData, hasIndexKey: dataLengthFixed, customProcessor });
         }
     }
-    _setLauncher(option, initData, hasIndexKey) {
+    _setLauncher({ option, initData, hasIndexKey, customProcessor }) {
         let size = this._getBodySize();
         const heatmapInstance = new Heatmap(option);
         this.bindEvent({
@@ -45,9 +45,14 @@ export default class Adapter {
             }
         })
         heatmapInstance.init(size);
-        const preProcessor = createPreProcessor(this.$win, (data) => {
-            this.parsedData = data;
-        });
+        let preProcessor;
+        if (customProcessor) {
+            preProcessor = (data) => { this.parsedData = customProcessor(data); return this.parsedData };
+        } else {
+            preProcessor = createPreProcessor(this.$win, (data) => {
+                this.parsedData = data;
+            });
+        }
         const converter = createConverter(hasIndexKey);
         const launcher = heatmapInstance.buildAnimation({
             converter: (data) => converter(preProcessor(data)),
