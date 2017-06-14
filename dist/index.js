@@ -1,4 +1,14 @@
-/******/ (function(modules) { // webpackBootstrap
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory();
+	else if(typeof define === 'function' && define.amd)
+		define([], factory);
+	else {
+		var a = factory();
+		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
+	}
+})(this, function() {
+return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
 /******/
@@ -485,10 +495,10 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 var field = exports.field = {
-    X: '_centerX',
-    Y: '_centerY',
-    W: '_w',
-    H: '_h',
+    X: 'cx',
+    Y: 'cy',
+    W: 'w',
+    H: 'h',
     VS: 'visible',
     // slient field
     SL: 'slient',
@@ -1115,7 +1125,6 @@ function initAnimate(Heatmap) {
             this.variance = 4 * this.r * this.r;
             var _requestId = void 0,
                 _interval = void 0,
-                _processor = void 0,
                 _converter = void 0,
                 _data = void 0,
                 then = void 0;
@@ -1124,21 +1133,16 @@ function initAnimate(Heatmap) {
                 var now = Date.now();
                 var elapsed = now - then;
                 if (elapsed > _interval) {
-                    _data = _processor(_data);
                     _this.update(_converter(_data));
                     then = now;
                 }
             };
             var setParams = function setParams(_ref) {
                 var fps = _ref.fps,
-                    processor = _ref.processor,
                     converter = _ref.converter,
                     data = _ref.data;
 
                 fps && (_interval = 1000 / fps) || _interval || (_interval = 50);
-                processor && (_processor = processor) || _processor || (_processor = function _processor(x) {
-                    return x;
-                });
                 converter && (_converter = converter) || _converter || (_converter = function _converter(x) {
                     return x;
                 });
@@ -1153,7 +1157,6 @@ function initAnimate(Heatmap) {
                 },
                 render: function render(data) {
                     data && (_data = data);
-                    _data = _processor(_data);
                     _this.render(_converter(_data));
                 },
                 start: function start(data) {
@@ -1378,7 +1381,7 @@ var _extends5 = __webpack_require__(14);
 
 var _extends6 = _interopRequireDefault(_extends5);
 
-exports.createProcessor = createProcessor;
+exports.createPreProcessor = createPreProcessor;
 exports.createConverter = createConverter;
 exports.trimData = trimData;
 
@@ -1386,7 +1389,7 @@ var _constants = __webpack_require__(31);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function createProcessor() {
+function createPreProcessor() {
     var $win = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : window;
     var cb = arguments[1];
 
@@ -1930,6 +1933,7 @@ var Adapter = function () {
                 option = _ref$option === undefined ? {} : _ref$option,
                 $win = _ref.$win,
                 initData = _ref.initData,
+                customProcessor = _ref.customProcessor,
                 _ref$dataLengthFixed = _ref.dataLengthFixed,
                 dataLengthFixed = _ref$dataLengthFixed === undefined ? false : _ref$dataLengthFixed;
 
@@ -1937,13 +1941,18 @@ var Adapter = function () {
                 this.$win = $win;
                 this.$doc = this.$win.document;
                 this.$body = this.$doc.body;
-                this._setLauncher((0, _extends3.default)({}, defaultOption, option), initData, dataLengthFixed);
+                this._setLauncher({ option: (0, _extends3.default)({}, defaultOption, option), initData: initData, hasIndexKey: dataLengthFixed, customProcessor: customProcessor });
             }
         }
     }, {
         key: '_setLauncher',
-        value: function _setLauncher(option, initData, indexKey) {
+        value: function _setLauncher(_ref2) {
             var _this = this;
+
+            var option = _ref2.option,
+                initData = _ref2.initData,
+                hasIndexKey = _ref2.hasIndexKey,
+                customProcessor = _ref2.customProcessor;
 
             var size = this._getBodySize();
             var heatmapInstance = new _src2.default(option);
@@ -1967,11 +1976,21 @@ var Adapter = function () {
                 }
             });
             heatmapInstance.init(size);
-            var launcher = heatmapInstance.buildAnimation({
-                processor: (0, _utils.createProcessor)(this.$win, function (data) {
+            var preProcessor = void 0;
+            if (customProcessor) {
+                preProcessor = function preProcessor(data) {
+                    _this.parsedData = customProcessor(data);return _this.parsedData;
+                };
+            } else {
+                preProcessor = (0, _utils.createPreProcessor)(this.$win, function (data) {
                     _this.parsedData = data;
-                }),
-                converter: (0, _utils.createConverter)(indexKey),
+                });
+            }
+            var _converter = (0, _utils.createConverter)(hasIndexKey);
+            var launcher = heatmapInstance.buildAnimation({
+                converter: function converter(data) {
+                    return _converter(preProcessor(data));
+                },
                 data: (0, _utils.trimData)(initData)
             });
             this.append(heatmapInstance.canvas);
@@ -2002,12 +2021,12 @@ var Adapter = function () {
         }
     }, {
         key: 'bindEvent',
-        value: function bindEvent(_ref2) {
-            var id = _ref2.id,
-                type = _ref2.type,
-                handler = _ref2.handler,
-                _ref2$target = _ref2.target,
-                target = _ref2$target === undefined ? this.$doc : _ref2$target;
+        value: function bindEvent(_ref3) {
+            var id = _ref3.id,
+                type = _ref3.type,
+                handler = _ref3.handler,
+                _ref3$target = _ref3.target,
+                target = _ref3$target === undefined ? this.$doc : _ref3$target;
 
             target.addEventListener(type, handler);
             this.events = this.events || [];
@@ -2138,9 +2157,9 @@ var Adapter = function () {
         }
     }, {
         key: '_resetSize',
-        value: function _resetSize(_ref3) {
-            var width = _ref3.width,
-                height = _ref3.height;
+        value: function _resetSize(_ref4) {
+            var width = _ref4.width,
+                height = _ref4.height;
 
             this.$heatdiv.style.width = width + 'px';
             this.$heatdiv.style.height = height + 'px';
@@ -3097,4 +3116,5 @@ setToStringTag(global.JSON, 'JSON', true);
 
 /***/ })
 /******/ ]);
+});
 //# sourceMappingURL=index.js.map

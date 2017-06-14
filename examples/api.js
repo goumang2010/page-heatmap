@@ -1,4 +1,5 @@
 var mockdata = require('./mock/heatdata');
+var mockdata2 = require('./mock/heatdata2');
 export default {
     getHeatData(data) {
         return Promise.resolve(mockdata).then(function(res) {
@@ -18,5 +19,21 @@ export default {
         }).catch(function(err) {
             console.error(err);
         });
-    }
+    },
+    getHeatData2({pageUrl, startTime, endTime}) {
+		 return Promise.resolve(mockdata2).then(function(res) {
+			if (res.code !== '200') {
+				return Promise.reject('获取热力图信息失败：' + res.msg);
+			}
+			var data;
+			if (res && (data = res.data) && data.length) {
+				return data;
+			} else {
+				return Promise.reject('暂无热力图信息');
+			}
+		}).catch(function(err) {
+            console.error(err);
+        });
+	}
+
 }
