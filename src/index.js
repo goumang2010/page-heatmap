@@ -65,6 +65,9 @@ export default class Adapter {
         data && (data = trimData(data))
         this.launcher && this.launcher.start(data);
     }
+    render(data) {
+         this.launcher.render(data);
+    }
     reset(data) {
         if (this.launcher) {
             this.launcher.reset({ data: trimData(data) });
@@ -80,7 +83,7 @@ export default class Adapter {
         target.addEventListener(type, handler);
         this.events = this.events || [];
         id = id || Object.keys(this.events).length;
-        this.events.push({ id, type, handler });
+        this.events.push({ id, type, handler, target });
     }
     unbindEvent(id, noerr = false) {
         if (!this.events) {
@@ -135,6 +138,9 @@ export default class Adapter {
     }
     destroy() {
         if (this.$heatdiv) {
+            for(let { type, handler, target } of this.events) {
+                target && target.removeEventListener(type, handler);
+            }
             this.$heatdiv.parentNode.removeChild(this.$heatdiv);
             this.$heatdiv = null;
         }
@@ -180,5 +186,6 @@ export default class Adapter {
     _resetSize({ width, height }) {
         this.$heatdiv.style.width = width + 'px';
         this.$heatdiv.style.height = height + 'px';
+        this.render();
     }
 }
