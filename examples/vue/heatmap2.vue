@@ -114,16 +114,28 @@ export default {
             this.iframe_loaded = true;
             let options = this.config;
             return api.getHeatData2(options).then((data) => {
-                this.$heatdata = data;
+                // this.$heatdata = data;
                 const $win = document.querySelector('iframe').contentWindow;
-                const offsetWidth = $win.innerWidth / 2;
+                const offsetWidth = $win.screen.width / 2;
                 const height = $win.document.body.clientHeight;
-                const initData = data.map(a => ({ value: a[this.datatype], cx: a.x + 600 - offsetWidth, cy: a.y, w: 20, h:20, visible: true, slient: a.y < height }));
+                // const initData = data.map(a => ({ value: a[this.datatype], cx: a.x + 600 - offsetWidth, cy: a.y, w: 20, h:20, visible: true, slient: a.y < height }));
+                const initData = data.map(a => ({ ...a, value: a[this.types[this.typeIndex].name], cx: a.x + 600 - offsetWidth, cy: a.y, w: 25, h:25, visible: a.y < height })).filter(a => (a.cx > 0 && a.cx < $win.screen.width && a.cy > 0 && a.cy < 100000));
+                this.$heatdata = initData;
                 // console.log(initData);
-                const customProcessor = data => data.map(x => x.slient ? x : ({...x, slient: x.cy < $win.document.body.clientHeight}));
+                const customProcessor = (data) => {
+                    let height = $win.document.body.clientHeight;
+                    return data.map((x) => {
+                    if(!x.visible) {
+                        let visible = x.cy < height;
+                        return {...x, visible}
+                    } else {
+                        return x;
+                    }
+                })};
                 this.$adapter.init({initData, $win, customProcessor, dataLengthFixed: true });
-                this.$adapter.start();
-                this.showTip()
+                // this.$adapter.start();
+                this.$adapter.render();
+                // this.showTip()
             }).catch(err => {
                 throw err;
             });
